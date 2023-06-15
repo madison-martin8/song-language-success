@@ -97,6 +97,113 @@ head(full_20_21)
 write.csv(full_20_21, file = "full_20_21.csv", row.names = F)
 ```
 
+# Exploring the Data / Results
+
+```{r eda unique songs}
+# how many unique songs 
+full_20_21 %>% 
+  filter(unique == 1) %>% 
+  count()
+
+# unique songs by week for 2020 viz 
+full_20_21 %>% 
+  filter(unique == 1, 
+         year == 2020) %>% 
+  ggplot(mapping = aes(x = date)) +
+  geom_freqpoly(binwidth = 7) + 
+  theme_classic() + 
+  labs(
+    title = "Unique Songs by Week (2020)", 
+    x = "Week", 
+    y = "Number of Unique Songs on the Chart", 
+    caption = "Source: Billboard Hot 100"
+  )
+
+# same for 2021 viz 
+full_20_21 %>% 
+  filter(unique == 1, 
+         year == 2021) %>% 
+  ggplot(mapping = aes(x = date)) +
+  geom_freqpoly(binwidth = 7) + 
+  theme_classic() + 
+  labs(
+    title = "Unique Songs by Week (2021)", 
+    x = "Week", 
+    y = "Number of Unique Songs on the Chart", 
+    caption = "Source: Billboard Hot 100"
+  )
+```
+
+A total of 7,300 songs were analyzed, sourced from two consecutive years (2020-2021) of the Billboard Hot 100 weekly charts. Out of the 17 months analyzed for this draft, there were only 1,125 unique songs (15.41%), due to many songs staying on the Hot 100 charts for multiple weeks, either consecutively or not. Specifically, there were 790 unique songs in 2020 (15.19%), and there were 335 (15.95%) unique songs in the portion of 2021 analyzed.
+
+```{r eda streams & plays, include=FALSE}
+# show most streamed songs of 2020 
+# add milstream for full df for easier viz  
+total_df <- full_20_21 %>% 
+  mutate(mil_stream = streams/1000000) 
+
+# get mean and sd for streams and plays 
+mean(total_df$mil_stream)
+sd(total_df$mil_stream)
+mean(total_df$spins)
+sd(total_df$spins)
+
+top_streams <- total_df %>% 
+  filter(year == 2020) %>% 
+  group_by(song, artist) %>% 
+  summarise(total_streams = sum(mil_stream)) %>% 
+  arrange(desc(total_streams)) %>% 
+  head(n = 10) 
+```
+
+```{r eda streams & plays viz}
+# show most streamed songs of 2020
+top_streams %>% 
+  ggplot(mapping = aes(reorder(song, -total_streams), y = total_streams)) + 
+  geom_bar(stat = "identity", colour = "green") + #to match spotify color
+  scale_x_discrete(guide = guide_axis(n.dodge=2))+  #to be able to read labels clearer
+  theme_classic() + 
+  labs(
+    title = "Most Streamed Songs of 2020",
+    x = "Title of Song", 
+    y = "Number of Total Streams (in Millions)", 
+    caption = "Source: Spotify"
+  )
+
+# top radio hits of 2020
+top_spins <- total_df %>% 
+  filter(year == 2020) %>%
+  group_by(song, artist) %>% 
+  summarise(total_spins = sum(spins)) %>% 
+  arrange(desc(total_spins)) %>% 
+  head(n = 10) 
+
+top_spins %>% 
+  ggplot(mapping = aes(reorder(song, -total_spins), y = total_spins)) + 
+  geom_bar(stat = "identity", colour = "hotpink") + #chartmetric is also green so chose pink for radio data
+  scale_x_discrete(guide = guide_axis(n.dodge=2))+  
+  theme_classic() + 
+  labs(
+    title = "Most Played Songs on the Radio of 2020",
+    x = "Title of Song", 
+    y = "Number of Total Radio Plays", 
+    caption = "Source: Chartmetric"
+  )
+```
+
+The average number of Spotify streams per week per song was over 3 million (M = 3118273.47, SD = 2229135.38), while the average number of radio plays per week per song was much less, comparatively (M = 1839.12, SD = 1867.48). The top 10 most streamed songs on Spotify in 2020, as well as the top 10 played songs on the radio in 2020, include songs such as "The Box" by Roddy Rich, "Blinding Lights" by The Weeknd, "Circles" by Post Malone, and "Adore You" by Harry Styles.
+
+```{r}
+# what percentage of those have some non-English lyrics 
+full_20_21 %>% 
+  filter(unique ==1) %>% 
+  filter(percent > 0.00)
+
+# what percentage overall have some non-English lyrics 
+full_20_21 %>% 
+  filter(percent > 0.00)
+```
+
 # Appendix
 
 ## Language Coding
