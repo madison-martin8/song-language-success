@@ -10,5 +10,5 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Introduction 
-This project aims to see if the langauge of the lyrics of songs in popular music in the United States correlates with different measures of success: support from the audience (music streams) and support from the industry (radio plays). This project is a modified form of an original project completed for credit at the University of Chicago in 2021. 
+This project aims to see if the language of the lyrics of songs in popular music in the United States correlates with different measures of the song's success: support from the audience (music streams) and support from the industry (radio plays). This project is a modified form of an original project completed for credit at the University of Chicago in 2021. 
 
