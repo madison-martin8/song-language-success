@@ -99,6 +99,7 @@ write.csv(full_20_21, file = "full_20_21.csv", row.names = F)
 
 # Exploring the Data / Results
 
+## Unique Songs, Streams, and Radio Play
 ```{r eda unique songs}
 # how many unique songs 
 full_20_21 %>% 
@@ -136,73 +137,118 @@ full_20_21 %>%
 
 A total of 7,300 songs were analyzed, sourced from two consecutive years (2020-2021) of the Billboard Hot 100 weekly charts. Out of the 17 months analyzed for this draft, there were only 1,125 unique songs (15.41%), due to many songs staying on the Hot 100 charts for multiple weeks, either consecutively or not. Specifically, there were 790 unique songs in 2020 (15.19%), and there were 335 (15.95%) unique songs in the portion of 2021 analyzed.
 
-```{r eda streams & plays, include=FALSE}
+```{r eda streams plays, results='hide'}
 # show most streamed songs of 2020 
 # add milstream for full df for easier viz  
 total_df <- full_20_21 %>% 
   mutate(mil_stream = streams/1000000) 
+
+# add kplay for full df for easier viz 
+total_df <- total_df %>% 
+  mutate(kspins = spins/1000)
 
 # get mean and sd for streams and plays 
 mean(total_df$mil_stream)
 sd(total_df$mil_stream)
 mean(total_df$spins)
 sd(total_df$spins)
+```
 
+```{r eda streams plays viz}
+# show most streamed songs of 2020
 top_streams <- total_df %>% 
   filter(year == 2020) %>% 
   group_by(song, artist) %>% 
   summarise(total_streams = sum(mil_stream)) %>% 
   arrange(desc(total_streams)) %>% 
   head(n = 10) 
-```
 
-```{r eda streams & plays viz}
-# show most streamed songs of 2020
+#viz 
 top_streams %>% 
   ggplot(mapping = aes(reorder(song, -total_streams), y = total_streams)) + 
-  geom_bar(stat = "identity", colour = "green") + #to match spotify color
-  scale_x_discrete(guide = guide_axis(n.dodge=2))+  #to be able to read labels clearer
+  geom_bar(stat = "identity", colour = "springgreen3") + #to match spotify color
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) + #to make it easier to read
   theme_classic() + 
   labs(
-    title = "Most Streamed Songs of 2020",
+    title = "Most Streamed Songs of 2020", 
     x = "Title of Song", 
     y = "Number of Total Streams (in Millions)", 
-    caption = "Source: Spotify"
+    caption = "Source: Spotify" 
   )
 
-# top radio hits of 2020
+# top radio hits 
 top_spins <- total_df %>% 
   filter(year == 2020) %>%
   group_by(song, artist) %>% 
-  summarise(total_spins = sum(spins)) %>% 
+  summarise(total_spins = sum(kspins)) %>% 
   arrange(desc(total_spins)) %>% 
   head(n = 10) 
 
 top_spins %>% 
   ggplot(mapping = aes(reorder(song, -total_spins), y = total_spins)) + 
-  geom_bar(stat = "identity", colour = "hotpink") + #chartmetric is also green so chose pink for radio data
-  scale_x_discrete(guide = guide_axis(n.dodge=2))+  
+  geom_bar(stat = "identity", colour = "hotpink") + #chartmetric is also green so chose pink
+  scale_x_discrete(guide = guide_axis(n.dodge=2)) + 
   theme_classic() + 
   labs(
     title = "Most Played Songs on the Radio of 2020",
     x = "Title of Song", 
-    y = "Number of Total Radio Plays", 
+    y = "Number of Total Radio Plays (in Thousands)", 
     caption = "Source: Chartmetric"
   )
 ```
 
 The average number of Spotify streams per week per song was over 3 million (M = 3118273.47, SD = 2229135.38), while the average number of radio plays per week per song was much less, comparatively (M = 1839.12, SD = 1867.48). The top 10 most streamed songs on Spotify in 2020, as well as the top 10 played songs on the radio in 2020, include songs such as "The Box" by Roddy Rich, "Blinding Lights" by The Weeknd, "Circles" by Post Malone, and "Adore You" by Harry Styles.
 
-```{r}
-# what percentage of those have some non-English lyrics 
-full_20_21 %>% 
-  filter(unique ==1) %>% 
-  filter(percent > 0.00)
+## Lyric Language 
 
-# what percentage overall have some non-English lyrics 
-full_20_21 %>% 
-  filter(percent > 0.00)
+```{r lyric length and langauge 1}
+# average number of words in the lyrics 
+# make a df with only the unique songs for easier analysis later 
+unique_df <- total_df %>% 
+  filter(unique == 1) 
+
+# oops! I have 3 NAs for lyric length, replace with mean 
+total_df$total_words[is.na(total_df$total_words)] <- mean(total_df$total_words, na.rm = TRUE)
+# now calculate mean 
+mean(total_df$total_words)
+
+# how many songs overall have some non-English lyrics 
+total_df %>% 
+  filter(percent > 0) %>% 
+  count()
+
+# how many unique songs have non-E lyrics 
+unique_df %>% 
+  filter(percent > 0) %>% 
+  count()
 ```
+
+```{r lyric length and language 2}
+# significant portion of non-E lyrics 
+total_df %>% 
+  filter(percent > 25) %>% 
+  count()
+# sig portion of unique songs 
+unique_df %>% 
+  filter(percent > 25) %>% 
+  count()
+
+#viz for non-E languages
+unique_df %>% 
+  filter(percent > 50) %>% 
+  ggplot(mapping = aes(x = language)) + 
+  geom_bar() + 
+  theme_classic() + 
+  labs(
+    title = "Predominantly Non-English Lyric Languages", 
+    x = "Language", 
+    y = "Number of Songs"
+  )
+```
+
+
+After coding the lyrical content of the songs for language percentage based on the word count, there were a total of 1,230 songs (16.85%) from 2020-2021 that included some non-English. When considering the unique songs from both years, a total of 225 songs (20%) included some non-English lyrics. Additionally, there were 322 songs (4.41%) which included a significant portion of their lyrics (25% or more) sung in non-English-languages, with that number increasing (6.33 %) when analyzing the unique songs for both years. The average (mean) number of words in the lyrics of all songs analyzed for this project was 433. Languages represented in this data set included Spanish, French, Korean, Hawaiian, Arabic, Hebrew, Japanese, and German. The most common languages represented in the lyrics were Spanish and Korean. 
+
 
 # Appendix
 
