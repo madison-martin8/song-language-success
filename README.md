@@ -10,6 +10,8 @@ This project was completed using R 4.3.0 and R Studio as the editor.
 - ggplot2
 - tidyverse
 - dplyr
+- apaTables
+- broom
 
 ### Data Sources 
 - Spotify
