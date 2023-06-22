@@ -100,6 +100,7 @@ write.csv(full_20_21, file = "full_20_21.csv", row.names = F)
 # Exploring the Data / Results
 
 ## Unique Songs, Streams, and Radio Play
+
 ```{r eda unique songs}
 # how many unique songs 
 full_20_21 %>% 
@@ -199,7 +200,7 @@ top_spins %>%
 
 The average number of Spotify streams per week per song was over 3 million (M = 3118273.47, SD = 2229135.38), while the average number of radio plays per week per song was much less, comparatively (M = 1839.12, SD = 1867.48). The top 10 most streamed songs on Spotify in 2020, as well as the top 10 played songs on the radio in 2020, include songs such as "The Box" by Roddy Rich, "Blinding Lights" by The Weeknd, "Circles" by Post Malone, and "Adore You" by Harry Styles.
 
-## Lyric Language 
+## Lyric Language
 
 ```{r lyric length and langauge 1}
 # average number of words in the lyrics 
@@ -246,9 +247,69 @@ unique_df %>%
   )
 ```
 
+After coding the lyrical content of the songs for language percentage based on the word count, there were a total of 1,230 songs (16.85%) from 2020-2021 that included some non-English. When considering the unique songs from both years, a total of 225 songs (20%) included some non-English lyrics. Additionally, there were 322 songs (4.41%) which included a significant portion of their lyrics (25% or more) sung in non-English-languages, with that number increasing (6.33 %) when analyzing the unique songs for both years. The average (mean) number of words in the lyrics of all songs analyzed for this project was 433. Languages represented in this data set included Spanish, French, Korean, Hawaiian, Arabic, Hebrew, Japanese, and German. The most common languages represented in the lyrics were Spanish and Korean.
 
-After coding the lyrical content of the songs for language percentage based on the word count, there were a total of 1,230 songs (16.85%) from 2020-2021 that included some non-English. When considering the unique songs from both years, a total of 225 songs (20%) included some non-English lyrics. Additionally, there were 322 songs (4.41%) which included a significant portion of their lyrics (25% or more) sung in non-English-languages, with that number increasing (6.33 %) when analyzing the unique songs for both years. The average (mean) number of words in the lyrics of all songs analyzed for this project was 433. Languages represented in this data set included Spanish, French, Korean, Hawaiian, Arabic, Hebrew, Japanese, and German. The most common languages represented in the lyrics were Spanish and Korean. 
+## Correlations 
+```{r correlations}
+# create an apa table to be used in paper 
+library(apaTables)
 
+# prep df for just the table 
+corr_df <- total_df %>% 
+  select(rank, binary, percent, position, streams, spins, radio_rank) %>% 
+  rename("Billboard Rank" = "rank", 
+         "Language" = "binary", 
+         "Non-English Lyrics Percentage" = "percent", 
+         "Spotify Rank" = "position", 
+         "Streams" = "streams", 
+         "Radio Plays" = "spins", 
+         "Radio Rank" = "radio_rank")
+
+apa.cor.table(corr_df, filename="Table_APA_paper.doc", show.conf.interval=F) 
+```
+
+There was a significant correlation between non-English lyric percentage and Billboard rank (r = .13, p < .01) and Spotify streams (r = -.03, p < .01), but not for Spotify Chart rank (1-100) . That is, a higher percentage of non-English lyrics was correlated with a lower Billboard rank (closer to 100 than 1), and less Spotify streams. Additionally, the non-English lyric percentage was significantly correlated with Radio plays (r = -.15, p < .01) and Radio Chart rank (r = .22, p < .01). That is, a higher percentage of non-English lyrics was correlated with a lower rank on the Radio charts (closer to 500 than 1), and less plays on the radio per week. 
+
+
+The correlations were very similar when looking at the language variable, which was the binary variable indicating if the song was predominantly (50% or more) in non-English or not. Specifically, the language variable was significantly correlated with Billboard rank (r = .12, p < .01), Spotify streams (r = -.03, p < .01), Radio plays (r = -.14, p < .01), and Radio chart rank (r = .21, p < .01), but not significant for Spotify chart rank. As for the non-English lyric percent, the binary assignment of the lyrics’ predominant language to non-English was correlated with a lower rank on Billboard and Radio play charts, as well as a lower Spotify streams and Radio plays per week.
+
+```{r streams vs lang percent}
+# viz of relationship between average streams and percentage of words in lyrics in non-English
+total_df %>% 
+  filter(unique == 1) %>% 
+  group_by(percent) %>% 
+  summarise(mean_streams = mean(mil_stream)) %>% 
+  ggplot(mapping = aes(x = percent, y = mean_streams)) + 
+  geom_line(colour = "springgreen3") +
+  geom_point() + 
+  theme_classic() + 
+  labs(
+    title = "Average Number of Streams by Percent of Non-English Lyrics", 
+    x = "Percent of Lyrics in Non-English", 
+    y = "Average Number of Streams (in Millions)", 
+    subtitle = "Source: Spotify"
+  )
+```
+
+```{r radio vs lang percent}
+# viz of relationship between average radio plays and percentage of words in lyrics in non-Eng
+total_df %>% 
+  filter(unique == 1) %>% 
+  group_by(percent) %>% 
+  summarise(mean_spins = mean(spins)) %>% 
+  ggplot(mapping = aes(x = percent, y = mean_spins)) + 
+  geom_line(colour = "hotpink") +
+  geom_point() + 
+  theme_classic() + 
+  labs(
+    title = "Average Number of Radio Plays by Percent of Non-English Lyrics", 
+    x = "Percent of Lyrics in Non-English", 
+    y = "Average Number of Radio Plays", 
+    subtitle = "Source: Chartmetric"
+  )
+```
+
+As can be seen from these graphs showing the relationship between the percentage of lyrics in non-English and the other measures of song support, while some songs with more non-English lyrics had high streams, the average number of radio plays for songs above 75% non-English were very low compared to the songs with less than 25% non-English lyrics. 
 
 # Appendix
 
