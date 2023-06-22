@@ -97,7 +97,7 @@ head(full_20_21)
 write.csv(full_20_21, file = "full_20_21.csv", row.names = F)
 ```
 
-# Exploring the Data / Results
+# Exploring the Data
 
 ## Unique Songs, Streams, and Radio Play
 
@@ -249,6 +249,8 @@ unique_df %>%
 
 After coding the lyrical content of the songs for language percentage based on the word count, there were a total of 1,230 songs (16.85%) from 2020-2021 that included some non-English. When considering the unique songs from both years, a total of 225 songs (20%) included some non-English lyrics. Additionally, there were 322 songs (4.41%) which included a significant portion of their lyrics (25% or more) sung in non-English-languages, with that number increasing (6.33 %) when analyzing the unique songs for both years. The average (mean) number of words in the lyrics of all songs analyzed for this project was 433. Languages represented in this data set included Spanish, French, Korean, Hawaiian, Arabic, Hebrew, Japanese, and German. The most common languages represented in the lyrics were Spanish and Korean.
 
+# Results 
+
 ## Correlations 
 ```{r correlations}
 # create an apa table to be used in paper 
@@ -310,6 +312,81 @@ total_df %>%
 ```
 
 As can be seen from these graphs showing the relationship between the percentage of lyrics in non-English and the other measures of song support, while some songs with more non-English lyrics had high streams, the average number of radio plays for songs above 75% non-English were very low compared to the songs with less than 25% non-English lyrics. 
+
+## Multiple Linear Regression 
+```{r regression 1}
+# for the total data set, are streams influenced by language of lyrics when controlling for radio support? 
+# here, percent variable is the percentage of the lyric words that are non-English
+lm1 <- lm(streams ~ percent + spins, data = total_df)
+summary(lm1)
+## language not sig when controlling for radio spins
+
+# for the total data set, are radio spins influenced by langauge of lyrics when controlling for audience support? 
+lm2 <- lm(spins ~ mil_stream + percent, data = total_df)
+summary(lm2)
+## language percent IS sig when controlling for streams!
+
+
+# final analysis on 2020 only since it's the only full year of data I have
+final_2020 <- total_df %>% 
+  filter(year == 2020)
+lm3 <- lm(spins ~ mil_stream + percent, data = final_2020)
+summary(lm3)
+## langauge percent has a higher impact here (larger intercept) 
+```
+
+Results of the multiple linear regression analysis indicated that lyric language (the percentage of words in each song's lyrics that are in a non-English language) was not a significant predictor in audience support (spotify streams), when controlling for radio support. However, when analyzing the data from 2020, there was a collective significant effect of percent of non-English lyrics and Spotify streams on Radio plays (F(2, 5194) = 95.93, p < .001, R2 = .036). The individual predictors were examined further and indicated that percent of non-English lyrics (B = -18.575, p < .001) and Spotify streams (B = 68.763, p < .001) were significant predictors in the model. In other words, the amount of radio plays per song per week could be predicted by the following formula: 
+	
+**Spins = 1663.8 + 68.76 (streams in millions) - 18.58 (percent of non-English lyrics)**  
+	
+The diagnostics of this multiple linear regression model are presented below. 
+
+
+```{r reg diagnostics}
+library(broom)
+# diagnostics of the model
+par(mfrow = c(2, 2))
+plot(lm3)
+
+plot(lm3, 3)
+
+# look for outliers and high leverage points 
+plot(lm3, 5)
+plot(lm3, 4)
+```
+
+The amount of explained variance is relatively low in the selected model (R2 = .036), which is to be expected in such a complex issue (how much radio play or audience support a song gets), especially considering this data set did not include any audio-based data which can influence popularity and success like genre, tempo, key, etc. However, let's see if we can increase our explained variance in radio plays with a different model. 
+
+```{r regression 2}
+# going to try a linear regression with all other variables to see if i can increase r2
+lm_all <- lm(spins ~ rank + mil_stream + percent + date + total_words, data = final_2020)
+summary(lm_all)
+## obviously, this has a very high r2
+## although I know that there is confounds here with the rank variable 
+```
+
+When including Billboard Hot 100 rank, charting week date, and the total number of words in the song's lyrics, the collective effect remains significant and the explained variance of the model increases drastically (F(5, 5191) = 666.5, p < .001, R2 = .391). However, the reason this model was not chosen for the final analysis is because by adding the Billboard Hot 100 rank variable, the predictor variables are no longer independent, as Billboard Hot 100 rank is computed utilizing streaming data and radio play data, which are also included here as predictor variables. It is interesting to note, however, that when controlling for all of these other variables, the total number of words in the song lyrics (B = -1.372, p < .001) is a significant predictor in number of radio plays. That is, songs with increased verbosity had less radio streams. 
+
+
+```{r regression 3}
+# let's try radio rank instead of number of spins, just to see if our finding holds 
+lm_radiorank <- lm(radio_rank ~ mil_stream + percent + total_words + date, data = final_2020)
+summary(lm_radiorank)
+
+# let's do spotify position instead of actual streaming numbers 
+lm_position <- lm(spins ~ position + percent + date + total_words, data = final_2020)
+summary(lm_position)
+```
+
+The results of these additional multiple linear regression models matches our main finding from the lm3 model conducted previously. Specifically, when considering radio rank (1-500) instead of number of radio plays (spins), the percent of non-English lyrics (B = 3.151, p < .001) is still a significant predictor in the model. Here, the radio rank increases (song gets lower on the chart) with an increase in percent of non-English lyrics, predicted by the following formula: 
+
+**Radio Rank = 389.36 + 7.83 (streams in millions) + 0.24 (total words in lyrics) + 3.15 (percent of non-English lyrics)** 
+
+Alternatively, when considering position on the Spotify chart (1-100) instead of number of streams as a predictor variable, the percent of non-English lyrics (B = -18.39, p < .001) is still a significant predictor in the model. In other words, the amount of radio plays per song per week can also be predicted by the following formula: 
+	
+**Spins = 2148.88 - 2.21 (Spotify chart position) - 2.12 (total words in lyrics) - 18.39 (percent of non-English lyrics)**
+
+# Discussion 
 
 # Appendix
 
